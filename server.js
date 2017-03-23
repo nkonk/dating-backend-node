@@ -116,7 +116,7 @@ app.post( '/api/v0/login/:phoneno', function( request, response ) {
 
     return User.findOne( { "PhoneNumber" : request.params.phoneno, "Password" : request.body.Password  }, function( err, user ) {
         if( !err ) {
-            if(user == null) return response.send(cfg.errorLoginFailed);
+            if(user === null) return response.send(cfg.errorLoginFailed);
             return response.send( { "Email" : user.Email, "ProfilePic" : user.ProfilePic } );
         } else {
             console.log( err );
@@ -294,7 +294,7 @@ app.post('/api/v0/createevent', function( request , response) {
 app.get( '/api/v0/event/:id', function( request, response ) {
     return Event.findOne( { "Id" : request.params.id }, function( err, event ) {
         if( !err ) {
-            if(event == null) return response.send(cfg.error);
+            if(event === null) return response.send(cfg.error);
             return response.send( event.Display );
         } else {
             console.log( err );
@@ -307,7 +307,7 @@ app.get( '/api/v0/event/:id', function( request, response ) {
 app.get( '/api/v0/event', function( request, response ) {
     return Event.find( function( err, events ) {
         if( !err ) {
-            if(events == null) return response.send(cfg.error);
+            if(events === null) return response.send(cfg.error);
             return response.send( events );
         } else {
             console.log( err );
@@ -359,7 +359,7 @@ app.get('/api/v0/whoallinevent/:eventid', function( request , response) {
   .exec( function( err, eventreg )
     {
       if( !err ) {
-          if(eventreg == null) return response.send(cfg.error);
+          if(eventreg === null) return response.send(cfg.error);
           return response.send( eventreg );
       } else {
           console.log( err );
@@ -371,6 +371,7 @@ app.get('/api/v0/whoallinevent/:eventid', function( request , response) {
 
 //Start server
 var port = cfg.port;
+var host = cfg.host;
 var server = app.listen( port, function() {
     console.log( 'Trysto API Express server listening on port %d in %s mode', port, app.settings.env );
 });
