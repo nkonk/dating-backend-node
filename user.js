@@ -4,20 +4,24 @@ var Schema = mongoose.Schema;
 
 
 module.exports = mongoose.model('User' , new Schema({
-    TableName : String,
     UserName : String,
     Email : { type: String, required: true, unique: true },
     PhoneNumber : { type: String, required: true, unique: true },
+    Password : String,
     BirthDay : String,
     Gender : String,
-    Password : String,
     Education: String,
     City : String,
     Work : String,
     Interests : String,
     About : String,
     ProfilePic : String,
-    Active : String,
-    InfractionCount : String,
-    InfractionReason : String
+    Status : String,
+    isFacebook : String,
+    FacebookId : String,
+    FacebookDisplayName : String,
+    isGooglePlus: String,
+    GoogleId : String,
+    GoogleDisplayName : String,
+    GoogleEmailId : String
 }));

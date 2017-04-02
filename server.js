@@ -64,7 +64,6 @@ app.get('/api', function(request, response) {
 // usersignup with HTTP method POST, JSON payload
 app.post('/api/v0/usersignup', function( request , response) {
     var user = new User( {
-      TableName : request.body.TableName,
       UserName : request.body.UserName,
       Email : request.body.Email,
       PhoneNumber : request.body.PhoneNumber,
@@ -76,7 +75,9 @@ app.post('/api/v0/usersignup', function( request , response) {
       Work : request.body.Work,
       Interests : request.body.Interests,
       About : request.body.About,
-      ProfilePic : request.body.ProfilePic
+      ProfilePic : request.body.ProfilePic,
+      Status : request.body.Status 
+
     } );
 
     user.save( function( err ) {
@@ -94,6 +95,40 @@ app.post('/api/v0/usersignup', function( request , response) {
 }
 );
 
+app.post('/api/v0/userupdate', function( request , response) {
+  return User.findOne( { "Email" : request.body.Email }, function( err, user ) {
+      if( !err ) {
+          if(user === null) return response.send(cfg.errorLoginFailed);
+    
+      user.Email = request.body.Email;
+      user.Education =request.body.Education;
+      user.City = request.body.City;
+      user.Work = request.body.Work;
+      user.Interests = request.body.Interests;
+      user.About = request.body.About;
+      user.Status = request.body.Status;
+
+    user.save( function( err ) {
+        console.log(err);
+        if( !err ) {
+            console.log( 'created' );
+            return response.send( user );
+        } else {
+            console.log( err );
+            return response.send(cfg.error);
+        }
+    });
+    console.log(request.body.UserName);
+
+
+    } else {
+          console.log( err );
+          return response.send(cfg.errorLoginFailed);
+      }
+  });
+
+}
+);
 
 /*app.get( '/api/v0/login/:id', function( request, response ) {
     return User.findOne( { "PhoneNumber" : request.params.id }, function( err, user ) {
@@ -113,10 +148,10 @@ app.post('/api/v0/usersignup', function( request , response) {
 
 // TODO : integrate using OAuth2
 app.post( '/api/v0/login/:phoneno', function( request, response ) {
-
+console.log(request);
     return User.findOne( { "PhoneNumber" : request.params.phoneno, "Password" : request.body.Password  }, function( err, user ) {
         if( !err ) {
-            if(user === null) return response.send(cfg.errorLoginFailed);
+            if(user == null) return response.send(cfg.errorLoginFailed);
             return response.send( { "Email" : user.Email, "ProfilePic" : user.ProfilePic } );
         } else {
             console.log( err );
@@ -264,7 +299,7 @@ app.post('/api/v0/addfriend', function(request, response) {
 // usersignup with HTTP method POST, JSON payload
 app.post('/api/v0/createevent', function( request , response) {
     var event = new Event( {
-      Id : request.body.Id,
+      EventId : request.body.EventId,
       Name : request.body.Name,
       Display : request.body.Display,
       MaleCount : request.body.MaleCount,
@@ -278,6 +313,7 @@ app.post('/api/v0/createevent', function( request , response) {
     } );
 
     console.log(request.body.Display);
+    console.log(event);
     event.save( function( err ) {
         if( !err ) {
             console.log( 'created' );
@@ -292,10 +328,10 @@ app.post('/api/v0/createevent', function( request , response) {
 
 // event id
 app.get( '/api/v0/event/:id', function( request, response ) {
-    return Event.findOne( { "Id" : request.params.id }, function( err, event ) {
+    return Event.findOne( { "_id" : request.params.id }, function( err, event ) {
         if( !err ) {
-            if(event === null) return response.send(cfg.error);
-            return response.send( event.Display );
+            if(event == null) return response.send(cfg.error);
+            return response.send( event );
         } else {
             console.log( err );
             return response.send(cfg.error);
@@ -305,9 +341,11 @@ app.get( '/api/v0/event/:id', function( request, response ) {
 
 // event id
 app.get( '/api/v0/event', function( request, response ) {
+   console.log(request);
+   console.log(response); 
     return Event.find( function( err, events ) {
         if( !err ) {
-            if(events === null) return response.send(cfg.error);
+            if(events == null) return response.send(cfg.error);
             return response.send( events );
         } else {
             console.log( err );
@@ -359,7 +397,7 @@ app.get('/api/v0/whoallinevent/:eventid', function( request , response) {
   .exec( function( err, eventreg )
     {
       if( !err ) {
-          if(eventreg === null) return response.send(cfg.error);
+          if(eventreg == null) return response.send(cfg.error);
           return response.send( eventreg );
       } else {
           console.log( err );
@@ -371,7 +409,6 @@ app.get('/api/v0/whoallinevent/:eventid', function( request , response) {
 
 //Start server
 var port = cfg.port;
-var host = cfg.host;
 var server = app.listen( port, function() {
     console.log( 'Trysto API Express server listening on port %d in %s mode', port, app.settings.env );
 });
