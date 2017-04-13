@@ -160,6 +160,37 @@ app.post( '/api/v0/login/:phoneno', function( request, response ) {
     });
 });
 
+
+app.get( '/api/v0/login/:phoneno', function( request, response ) {
+//console.log(request);
+    return User.find( { "PhoneNumber" : request.params.phoneno  }, function( err, user ) {
+        if( !err ) {
+            if(user == null) return response.send(cfg.error);
+            return response.send(
+
+              user.map(function(usr) {
+                return {
+
+                  UserName : usr.UserName,
+                  Email : usr.Email,
+                  BirthDay : usr.BirthDay,
+                  Gender : usr.Gender,
+                  Education: usr.Education,
+                  City : usr.City,
+                  Work : usr.Work,
+                  Interests : usr.Interests,
+                  About : usr.About,
+                  ProfilePic : usr.ProfilePic
+                }
+              })
+             );
+        } else {
+            console.log( err );
+            return response.send(cfg.errorLoginFailed);
+        }
+    });
+});
+
 app.get( '/api/v0/alluser', function( request, response ) {
     return User.find(function( err, users ) {
         if( !err ) {
