@@ -149,7 +149,15 @@ app.put('/api/v0/userupdate', function( request , response) {
 // TODO : integrate using OAuth2
 app.post( '/api/v0/login/:phoneno', function( request, response ) {
 //console.log(request);
-    return User.findOne( { "PhoneNumber" : request.params.phoneno, "Password" : request.body.Password  }, function( err, user ) {
+    return User.findOne(
+        {
+              $or: [
+                        { $and: [{PhoneNumber: request.params.phoneno}, {Password: request.body.Password}] },
+                        { $and: [{Email: request.params.phoneno}, {Password: request.body.Password}] }
+                    ]
+
+        }
+      , function( err, user ) {
         if( !err ) {
             if(user == null) return response.send(cfg.errorLoginFailed);
             return response.send( { "Email" : user.Email, "ProfilePic" : user.ProfilePic } );
