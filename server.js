@@ -76,7 +76,7 @@ app.post('/api/v0/usersignup', function( request , response) {
       Interests : request.body.Interests,
       About : request.body.About,
       ProfilePic : request.body.ProfilePic,
-      Status : request.body.Status 
+      Status : request.body.Status
 
     } );
 
@@ -95,33 +95,33 @@ app.post('/api/v0/usersignup', function( request , response) {
 }
 );
 
-app.post('/api/v0/userupdate', function( request , response) {
+app.put('/api/v0/userupdate', function( request , response) {
   return User.findOne( { "Email" : request.body.Email }, function( err, user ) {
       if( !err ) {
           if(user === null) return response.send(cfg.errorLoginFailed);
-    
-      user.Email = request.body.Email;
+
       user.Education =request.body.Education;
       user.City = request.body.City;
       user.Work = request.body.Work;
       user.Interests = request.body.Interests;
       user.About = request.body.About;
       user.Status = request.body.Status;
+      user.Hobbies = request.body.Hobbies;
+      console.log(user);
+      user.save(function( err ) {
+         console.log(err);
+         if( !err ) {
+             console.log( 'created' );
+             return response.send( user );
+         } else {
+             console.log( err );
+             return response.send(cfg.error);
+         }
+      });
+      console.log(request.body.UserName);
 
-    user.save( function( err ) {
-        console.log(err);
-        if( !err ) {
-            console.log( 'created' );
-            return response.send( user );
-        } else {
-            console.log( err );
-            return response.send(cfg.error);
-        }
-    });
-    console.log(request.body.UserName);
 
-
-    } else {
+      } else {
           console.log( err );
           return response.send(cfg.errorLoginFailed);
       }
@@ -148,7 +148,7 @@ app.post('/api/v0/userupdate', function( request , response) {
 
 // TODO : integrate using OAuth2
 app.post( '/api/v0/login/:phoneno', function( request, response ) {
-console.log(request);
+//console.log(request);
     return User.findOne( { "PhoneNumber" : request.params.phoneno, "Password" : request.body.Password  }, function( err, user ) {
         if( !err ) {
             if(user == null) return response.send(cfg.errorLoginFailed);
@@ -341,8 +341,8 @@ app.get( '/api/v0/event/:id', function( request, response ) {
 
 // event id
 app.get( '/api/v0/event', function( request, response ) {
-   console.log(request);
-   console.log(response); 
+   //console.log(request);
+   //console.log(response);
     return Event.find( function( err, events ) {
         if( !err ) {
             if(events == null) return response.send(cfg.error);
@@ -371,6 +371,7 @@ app.get("/api/v0/events", function(request, response) {
 app.post('/api/v0/joinevent', function( request , response) {
     var eventregistration = new EventRegistration( {
       EventId : request.body.EventId,
+      UserId : request.body.UserId,
       UserEmailId : request.body.UserEmailId,
       RegisteredOnDate : request.body.RegisteredOnDate,
       IsAttending : request.body.IsAttending,
@@ -390,20 +391,38 @@ app.post('/api/v0/joinevent', function( request , response) {
 }
 );
 
+
 app.get('/api/v0/whoallinevent/:eventid', function( request , response) {
-  return EventRegistration.find(
-    { "EventId" : request.params.eventid }
-  ).populate('EventId')
-  .exec( function( err, eventreg )
-    {
-      if( !err ) {
-          if(eventreg == null) return response.send(cfg.error);
-          return response.send( eventreg );
-      } else {
-          console.log( err );
-          return response.send(cfg.error);
-      }
-  });
+  console.log(request.params);
+  return EventRegistration
+   .find(
+     { "EventId" : request.params.eventid }
+   )
+   .populate('EventId')
+   .exec(function(err, events) {
+     if(err) return response.send(err);
+     EventRegistration.populate(events, {
+       path: 'UserId',
+       model: 'User'
+     },
+     function(err, attendees) {
+       if(err) return response.send(err);
+       //console.log(cars);
+       // This object should now be populated accordingly.
+       response.send(attendees.map(function(attendee) {
+         return {
+           EventId : attendee._id,
+           UserEmailId : attendee.UserEmailId,
+           RegisteredOnDate : attendee.RegisteredOnDate,
+           IsAttending : attendee.IsAttending,
+           Comments : attendee.Comments,
+           UserName : attendee.UserId.UserName,
+           UserBDay : attendee.UserId.BirthDay,
+           UserCity : attendee.UserId.City
+         }
+       }));
+     });
+   });
 }
 );
 
