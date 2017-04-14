@@ -188,7 +188,10 @@ app.post( '/api/v0/login/:phoneno', function( request, response ) {
 
 app.get( '/api/v0/login/:phoneno', function( request, response ) {
 //console.log(request);
-    return User.find( { "PhoneNumber" : request.params.phoneno  }, function( err, user ) {
+    return User.find( { 
+       $or: [{PhoneNumber: request.params.phoneno}, {Email: request.params.phoneno}]
+
+    }, function( err, user ) {
         if( !err ) {
             if(user == null) return response.send(cfg.error);
             return response.send(
