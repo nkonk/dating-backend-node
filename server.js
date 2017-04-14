@@ -159,8 +159,25 @@ app.post( '/api/v0/login/:phoneno', function( request, response ) {
         }
       , function( err, user ) {
         if( !err ) {
-            if(user == null) return response.send(cfg.errorLoginFailed);
-            return response.send( { "Email" : user.Email, "ProfilePic" : user.ProfilePic } );
+            if(user === null) return response.send(cfg.errorLoginFailed);
+            return response.send(
+
+                {
+
+                  UserName : user.UserName,
+                  Email : user.Email,
+                  PhoneNumber : user.PhoneNumber,
+                  BirthDay : user.BirthDay,
+                  Gender : user.Gender,
+                  Education: user.Education,
+                  City : user.City,
+                  Work : user.Work,
+                  Interests : user.Interests,
+                  About : user.About,
+                  ProfilePic : user.ProfilePic
+                }
+
+             );
         } else {
             console.log( err );
             return response.send(cfg.errorLoginFailed);
