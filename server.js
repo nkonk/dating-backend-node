@@ -163,7 +163,7 @@ app.post( '/api/v0/login/:phoneno', function( request, response ) {
             return response.send(
 
                 {
-
+                  _id: user._id,
                   UserName : user.UserName,
                   Email : user.Email,
                   PhoneNumber : user.PhoneNumber,
@@ -171,6 +171,7 @@ app.post( '/api/v0/login/:phoneno', function( request, response ) {
                   Gender : user.Gender,
                   Education: user.Education,
                   City : user.City,
+                  Hobbies : user.Hobbies,
                   Work : user.Work,
                   Interests : user.Interests,
                   About : user.About,
@@ -192,19 +193,23 @@ app.get( '/api/v0/login/:phoneno', function( request, response ) {
        $or: [{PhoneNumber: request.params.phoneno}, {Email: request.params.phoneno}]
 
     }, function( err, user ) {
-        if( !err ) {
+       console.log(user);  
+      if( !err ) {
             if(user == null) return response.send(cfg.error);
             return response.send(
 
               user.map(function(usr) {
                 return {
 
+                  _id : usr._id,
                   UserName : usr.UserName,
                   Email : usr.Email,
+                  PhoneNumber : usr.PhoneNumber,
                   BirthDay : usr.BirthDay,
                   Gender : usr.Gender,
                   Education: usr.Education,
                   City : usr.City,
+                  Hobbies : usr.Hobbies,
                   Work : usr.Work,
                   Interests : usr.Interests,
                   About : usr.About,
@@ -249,23 +254,42 @@ app.get('/api/v0/friendlist/:phoneno', function(request, response) {
   .populate('UserId')
   .exec(
   function( err, users ) {
-    console.log(users);
+    //console.log(users);
+    console.log(users.length);
       if( !err ) {
           if(users === null) return response.send(cfg.errorPhoneNumberNotFound);
           if(users[0] === undefined) return response.send(cfg.errorPhoneNumberNotFound);
-          if(users[0].UserId.PhoneNumber !== request.params.phoneno) {
-             return response.send( { "Email" : users[0].UserId.Email, "ProfilePic" : users[0].UserId.ProfilePic } );
-          }
-          else {
-             return response.send(cfg.errorPhoneNumberNotFound);
-          }
+             return response.send( 
+                //{ "Email" : users[0].UserId.Email, "ProfilePic" : users[0].UserId.ProfilePic } 
+                users.map(function(user) {
+                   console.log(user); 
+              
+                if(user.UserId.PhoneNumber !== request.params.phoneno ) {
+                   return {
+                     Email : user.UserId.Email,      
+                     UserPhoneId : user.UserPhoneId,
+                     UserName : user.UserId.UserName,
+                     BirthDay : user.UserId.BirthDay,
+                     City : user.UserId.City,
+                     ProfilePic : user.UserId.ProfilePic,
+                     Gender : user.UserId.Gender,
+                     FriendPhoneId : user.FriendPhoneId
+                   }
+                 }
+                 else return;
+                }));
+             
+          //}
+          //else {
+          //   return response.send(cfg.errorPhoneNumberNotFound);
+          //}
       } else {
           console.log( err );
           return response.send(cfg.errorPhoneNumberNotFound);
       }
   });
-
-});
+ }
+);
 
 // add as friend
 
@@ -313,8 +337,8 @@ app.post('/api/v0/addfriend', function(request, response) {
   });
 
 
-  //console.log('=======================================================');
-  //console.log( 'C .. ' + cfg.existsPhone + ' .. ' + cfg.alreadyFriend + ' :: ' + cfg.userId._id);
+  console.log('=======================================================');
+  console.log( 'C .. ' + cfg.existsPhone + ' .. ' + cfg.alreadyFriend + ' :: ' + cfg.userId._id);
   if(cfg.alreadyFriend !== -1 && cfg.alreadyFriend !== undefined ) {
 
     var friend = new Friend( {
@@ -437,8 +461,27 @@ app.post('/api/v0/joinevent', function( request , response) {
       Comments : request.body.Comments
     } );
 
-    console.log(request.body.UserEmailId);
-    eventregistration.save( function( err ) {
+    var count = 0; 
+     EventRegistration.count(
+
+      {$and: [ { "EventId" : request.body.EventId}, { "UserId" : request.body.UserId} ]}
+     
+       , function(err, eventsCount) { 
+           console.log(eventsCount);
+            if(err) {
+            response.status(404).json({"error":"not found","err":err});
+            return;
+           } 
+        count = eventsCount;
+        return count;
+    });
+
+    console.log(request.body.UserEmailId + " "  + count);
+    console.log(count);
+    console.log(count.length);
+
+    if(count === 0 || count.length === undefined) {
+      eventregistration.save( function( err ) {
         if( !err ) {
             console.log( 'created' );
             return response.send( eventregistration );
@@ -446,10 +489,51 @@ app.post('/api/v0/joinevent', function( request , response) {
             console.log( err );
             return response.send(cfg.error);
         }
-    });
+      });
+    }
+    else {
+       return response.send(eventregistration);
+    }    
 }
 );
 
+
+app.get('/api/v0/allinevent', function( request , response) {
+  console.log(request.params);
+  return EventRegistration
+   .find(
+   )
+   .populate('EventId')
+   .exec(function(err, events) {
+     if(err) return response.send(err);
+     EventRegistration.populate(events, {
+       path: 'UserId',
+       model: 'User'
+     },
+     function(err, attendees) {
+       if(err) return response.send(err);
+       //console.log(attendees);
+       // This object should now be populated accordingly.
+       response.send(attendees.map(function(attendee) {
+       console.log("\n\n" + attendee);
+        if(attendee.UserId !== undefined) 
+        return {
+           EventId : attendee._id,
+           UserEmailId : attendee.UserEmailId,
+           UserPhoneId : attendee.UserId.PhoneNumber, 
+           RegisteredOnDate : attendee.RegisteredOnDate,
+           IsAttending : attendee.IsAttending,
+           Comments : attendee.Comments,
+           UserName : attendee.UserId.UserName,
+           UserBDay : attendee.UserId.BirthDay,
+           UserCity : attendee.UserId.City,
+           ProfilePic : attendee.UserId.ProfilePic
+         }
+       }));
+     });
+   });
+}
+);
 
 app.get('/api/v0/whoallinevent/:eventid', function( request , response) {
   console.log(request.params);
@@ -466,24 +550,29 @@ app.get('/api/v0/whoallinevent/:eventid', function( request , response) {
      },
      function(err, attendees) {
        if(err) return response.send(err);
-       //console.log(cars);
+       //console.log(attendees);
        // This object should now be populated accordingly.
        response.send(attendees.map(function(attendee) {
+         console.log("\n\n" + attendee);
          return {
            EventId : attendee._id,
            UserEmailId : attendee.UserEmailId,
+           UserPhoneId : attendee.UserId.PhoneNumber, 
            RegisteredOnDate : attendee.RegisteredOnDate,
            IsAttending : attendee.IsAttending,
            Comments : attendee.Comments,
            UserName : attendee.UserId.UserName,
            UserBDay : attendee.UserId.BirthDay,
-           UserCity : attendee.UserId.City
+           UserCity : attendee.UserId.City,
+           ProfilePic : attendee.UserId.ProfilePic
          }
        }));
      });
    });
 }
 );
+
+
 
 //Start server
 var port = cfg.port;
