@@ -11,5 +11,6 @@ module.exports = {
  errorPasswordExpired : {"ErrorCode": "1002", "ErrorMessage" : "Password expired"},
  errorIncorrectCredentials : {"ErrorCode": "1003", "ErrorMessage" : "Incorrect Mobile number / password"},
  errorPhoneNumberNotFound : {"ErrorCode": "1004", "ErrorMessage" : "Incorrect Mobile numbers"},
- errorAlreadyFriends : {"ErrorCode": "1005", "ErrorMessage" : "Already added to Friend List"}
+ errorAlreadyFriends : {"ErrorCode": "1005", "ErrorMessage" : "Already added to Friend List"},
+ errorNoFriends : {"ErrorCode": "1006", "ErrorMessage" : "No friends as of now. Join  Events and meet new friends"}
  }
