@@ -16,6 +16,7 @@ module.exports = mongoose.model('User' , new Schema({
     Work : String,
     Interests : String,
     About : String,
+    DeviceIdentifier : String, 
     ProfilePic : String,
     Status : String,
     isFacebook : String,
