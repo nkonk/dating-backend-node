@@ -1,8 +1,8 @@
 
 module.exports = {
- dbconn : 'mongodb://localhost/SpeedDating',
- port : 80,
- host : "50.63.161.150",
+ dbconn : 'mongodb://50.63.161.150/SpeedDating',
+ port : 8081,
+ host : "0.0.0.0",
  alreadyFriend : 0,
  existsPhone : 0,
  userId : "",

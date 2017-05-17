@@ -1,5 +1,5 @@
  var mongoose = require("mongoose");
- mongoose.connect("mongodb://localhost/SpeedDating");
+ mongoose.connect("mongodb://50.63.161.150/SpeedDating");
 
  var db = mongoose.connection;
 
