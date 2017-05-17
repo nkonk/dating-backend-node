@@ -1,14 +1,14 @@
-exports.propComparator = function(sortBy, sortAs) {
+exports.eventPropComparator = function(sortBy, sortAs) {
   if (sortBy == "id") {
 
     if (sortAs == "DESC") {
       return function(a, b) {
-           return a["Name"] > b["Name"] ? 1 : -1
+           return a["Name"] < b["Name"] ? 1 : -1
       }
     }
     else {
       return function(a, b) {
-           return a["Name"] < b["Name"] ? 1 : -1
+           return a["Name"] > b["Name"] ? 1 : -1
       }
     }
   }
@@ -17,12 +17,12 @@ exports.propComparator = function(sortBy, sortAs) {
   if (sortBy == "MaleCount" || sortBy == "FemaleCount" || sortBy == "OtherCount") {
     if (sortAs == "DESC") {
       return function(a, b) {
-        return Number(a[sortBy]) > Number(b[sortBy]) ? 1 : -1
+        return Number(a[sortBy]) < Number(b[sortBy]) ? 1 : -1
       }
     }
     else {
       return function(a, b) {
-        return Number(a[sortBy]) > Number(b[sortBy]) ? -1 : 1
+        return Number(a[sortBy]) > Number(b[sortBy]) ? 1 : -1
       }
     }
   }
@@ -75,4 +75,49 @@ return [yr,mon,date]
     }
   }
 
+}
+
+
+exports.usrPropComparator = function(sortBy, sortAs){
+    if (sortBy == "id" || sortBy =="UserName") {
+
+    if (sortAs == "DESC") {
+      return function(a, b) {
+           return a["UserName"] < b["UserName"] ? 1 : -1
+      }
+    }
+    else {
+      return function(a, b) {
+           return a["UserName"] > b["UserName"] ? 1 : -1
+      }
+    }
+  }
+  
+    if (sortBy == "Email") {
+
+    if (sortAs == "DESC") {
+      return function(a, b) {
+           return a["Email"] < b["Email"] ? 1 : -1
+      }
+    }
+    else {
+      return function(a, b) {
+           return a["Email"] > b["Email"] ? 1 : -1
+      }
+    }
+  }
+  
+  if (sortBy == "Gender" || sortBy =="City" || sortBy =="Education" || sortBy =="About") {
+
+    if (sortAs == "DESC") {
+      return function(a, b) {
+           return a[sortBy] < b[sortBy] ? 1 : -1
+      }
+    }
+    else {
+      return function(a, b) {
+           return a[sortBy] > b[sortBy] ? 1 : -1
+      }
+    }
+  }
 }

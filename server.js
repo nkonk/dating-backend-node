@@ -11,6 +11,9 @@ var application_root = __dirname,
 // config file
 var cfg = require('./config');
 
+
+var sorters = require("./utilities/sorters")
+
 var serviceAccount = require("./trysto-3de15-firebase-adminsdk-lktpn-9ebf370f97.json");
 var registrationToken = ["dTUggsukKRg:APA91bEYAdNu7rT5UZzbA0MVmpXuCAyM3c4sBANme_SD_IqYBamr8OEibKnnpNc-tL4EioBvwoJpqR56fVTx04WRcB2SVfhQbFjSgYPQhYTad8sJCRo7Dar4-pMvRsogz1gXSNQSp8sr",
   "fWfnlv6nkSk:APA91bFW3-dUmbICYX4Td0kePOrzT5D73BtbQg4cKGSBk2Z8Y0Mn225uQ_el9j3KYXiBxxF7wlQ8TAdSCY9ku1GZrajRS7ECd4v3WXI2feRTmmCpPwegiB6qYxVFMvOsYwivDsh_VKey",
@@ -442,12 +445,66 @@ app.get('/api/v0/login/:phoneno', function(request, response) {
 app.get('/api/v0/alluser', function(request, response) {
   console.log(request.auth)
 
-  User.find({}, function(err, users) {
+  //console.log(response);
+  User.aggregate([{
+    "$match": {
+      "Status": "1"
+    }
+  }, {
+    "$sort": {
+      "UserName": 1
+    }
+  }, {
+    "$project": {
+      tmp: {
+        "id": "$_id",
+        "UserName": "$UserName",
+        "Email": "$Email",
+        "PhoneNumber": "$PhoneNumber",
+        "Birthday": "$Birthday",
+        "Gender": "$Gender",
+        "City": "$City",
+        "Education": "$Education",
+        "Hobbies": "$Hobbies",
+        "Interests": "$Interests",
+        "Work": "$Work",
+        "About": "$About",
+        "ProfilePic":"$ProfilePic",
+        "DeviceIdentifier":"$DeviceIdentifier",
+        "Status": "$Status"
+      }
+    }
+  }, {
+    "$group": {
+      _id: null,
+      count: {
+        $sum: 1
+      },
+      rows: {
+        $addToSet: '$tmp'
+      }
+    }
+  }], function(err, users) {
     if (!err) {
-      console.log(users.length)
-      response.header('Content-Range', 'user 0-' + users.length + '/' + users.length);
-      var count = 0;
-      var mkuser = function(usrName, email, gender, city, education, about) {
+      //console.log(users.length)
+      response.header('Content-Range', 'users 0-' + users.length + '/' + users.length);
+      var data;
+      if (request.param('sort')) {
+       var sorts = request.param('sort').replace(/[\["\]]/g, '').trim(" ").split(",") || ['id', 'ASC']
+        console.log("Sort By " + sorts[0])
+        console.log("Sort AS " + sorts[1])
+        var sortField = sorts[0]
+        var sortBy = sorts[1]
+        data = users[0].rows;
+        var count = 0;
+         data.forEach(function(row) {
+          count = count + 1
+          row.id = count
+        })
+        data = data.sort(sorters.usrPropComparator(sortField, sortBy));
+      }
+      
+    /*  var mkuser = function(usrName, email, gender, city, education, about) {
         count = count + 1;
         return {
           id: count,
@@ -466,9 +523,9 @@ app.get('/api/v0/alluser', function(request, response) {
         count = count + 1;
       })
 
-
+  */
       response.send({
-        data: allUsers
+        data: data
       });
     }
     else {
@@ -857,8 +914,6 @@ app.get('/api/v0/event', function(request, response) {
         //get field to sort
 
         var sorts = request.param('sort').replace(/[\["\]]/g, '').trim(" ").split(",") || ['id', 'ASC']
-        console.log(sorts)
-          //var sorts = ['id','DESC']
         console.log("Sort By " + sorts[0])
         console.log("Sort AS " + sorts[1])
         var sortField = sorts[0]
@@ -869,11 +924,9 @@ app.get('/api/v0/event', function(request, response) {
           count = count + 1
           row.id = count
         })
-        var util = require("./utilities/sorters")
+       
 
-        data[3].Status = "InActive";
-        data = data.sort(util.propComparator(sortField, sortBy));
-        // console.log(data)
+        data = data.sort(sorters.eventPropComparator(sortField, sortBy));
       }
 
       return response.send({
