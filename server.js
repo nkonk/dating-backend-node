@@ -6,7 +6,12 @@ var application_root = __dirname,
   mongoose = require('mongoose'), //Used for accessing a MongoDB database
   express = require('express'), //Web framework
   unique = require("array-unique").immutable,
-  admin = require("firebase-admin");
+  admin = require("firebase-admin"),
+  methodOverride = require("method-override"); 
+
+//Setup mongoose to use nodejs built-in  promise library instead of its mpromise
+
+mongoose.Promise = global.Promise;
 
 // config file
 var cfg = require('./config');
@@ -49,6 +54,8 @@ var tokenlib = require('jsonwebtoken');
 // Configure server
 app.configure(function() {
 
+app.use(methodOverride('X-HTTP-Method-Override'));
+
   app.use(jwt({
     secret: 'SecretSecretSecret',
     credentialsRequired: false,
@@ -74,7 +81,7 @@ app.configure(function() {
   });
 
 
-  app.use(express.methodOverride());
+  
 
   // ## CORS middleware
   // 
@@ -98,7 +105,7 @@ app.configure(function() {
   app.use(express.bodyParser());
 
   //checks request.body for HTTP method overrides
-  app.use(express.methodOverride());
+  //  app.use(express.methodOverride());
 
   //perform route lookup based on url and HTTP method
   app.use(app.router);
@@ -110,11 +117,6 @@ app.configure(function() {
   }));
   app.set('view engine', 'ejs');
   app.set('views', __dirname + '/docs');
-
-
-
-
-
 });
 
 
@@ -447,10 +449,6 @@ app.get('/api/v0/alluser', function(request, response) {
 
   //console.log(response);
   User.aggregate([{
-    "$match": {
-      "Status": "1"
-    }
-  }, {
     "$sort": {
       "UserName": 1
     }
@@ -469,8 +467,8 @@ app.get('/api/v0/alluser', function(request, response) {
         "Interests": "$Interests",
         "Work": "$Work",
         "About": "$About",
-        "ProfilePic":"$ProfilePic",
-        "DeviceIdentifier":"$DeviceIdentifier",
+        "ProfilePic": "$ProfilePic",
+        "DeviceIdentifier": "$DeviceIdentifier",
         "Status": "$Status"
       }
     }
@@ -486,25 +484,25 @@ app.get('/api/v0/alluser', function(request, response) {
     }
   }], function(err, users) {
     if (!err) {
-      //console.log(users.length)
+      console.log(users.length)
       response.header('Content-Range', 'users 0-' + users.length + '/' + users.length);
-      var data;
+      var data = users[0].rows;
       if (request.param('sort')) {
-       var sorts = request.param('sort').replace(/[\["\]]/g, '').trim(" ").split(",") || ['id', 'ASC']
+        var sorts = request.param('sort').replace(/[\["\]]/g, '').trim(" ").split(",") || ['id', 'ASC']
         console.log("Sort By " + sorts[0])
         console.log("Sort AS " + sorts[1])
         var sortField = sorts[0]
         var sortBy = sorts[1]
-        data = users[0].rows;
+
         var count = 0;
-         data.forEach(function(row) {
+        data.forEach(function(row) {
           count = count + 1
           row.id = count
         })
         data = data.sort(sorters.usrPropComparator(sortField, sortBy));
       }
-      
-    /*  var mkuser = function(usrName, email, gender, city, education, about) {
+
+      /*  var mkuser = function(usrName, email, gender, city, education, about) {
         count = count + 1;
         return {
           id: count,
@@ -862,15 +860,15 @@ app.get('/api/v0/event/:id', function(request, response) {
   });
 });
 
-// event id
+
 app.get('/api/v0/event', function(request, response) {
   console.log("Order : " + request.param('order'));
   console.log("Range : " + request.param('range'));
   //console.log("Sort By : "+request.param('sort').substr(1,request.param('sort').length-2));
-
-
   //console.log(response);
-  Event.aggregate([{
+
+
+  var AllEvents = Event.aggregate([{
     "$match": {
       "Status": "Active"
     }
@@ -905,40 +903,108 @@ app.get('/api/v0/event', function(request, response) {
         $addToSet: '$tmp'
       }
     }
-  }], function(err, events) {
+  }]);
+
+  AllEvents.then(function(err, events) {
     if (!err) {
       if (events == null) return response.send(cfg.error);
       response.header('Content-Range', 'events 0-' + events[0].count + '/' + events[0].count);
       var data;
+      data = events[0].rows;
       if (request.param('sort')) {
         //get field to sort
-
         var sorts = request.param('sort').replace(/[\["\]]/g, '').trim(" ").split(",") || ['id', 'ASC']
+          //TODO Remove these
         console.log("Sort By " + sorts[0])
         console.log("Sort AS " + sorts[1])
+
         var sortField = sorts[0]
         var sortBy = sorts[1]
-        data = events[0].rows;
         var count = 0;
         data.forEach(function(row) {
           count = count + 1
           row.id = count
         })
-       
-
         data = data.sort(sorters.eventPropComparator(sortField, sortBy));
       }
 
-      return response.send({
-        "data": data || []
-      });
+      //   return response.send({
+      //      "data": data || []
+      //    });
     }
     else {
       console.log(err);
       return response.send(cfg.error);
     }
   });
+
+  /*
+
+    */
+
+
 });
+
+
+app.get('/api/v0/landing', function(request, response) {
+  var TopEvents = Event.aggregate([{
+    $match: {
+      "Status": "Active"
+    }
+  }, {
+    $project: {
+      id: "$_id",
+      Name: "$Name",
+      totalMems: {
+        $sum: ["$ActualMaleCount", "$ActualFemaleCount", "$ActualOtherCount"]
+      }
+    }
+  }, {
+    $sort: {
+      totalMems: -1
+    }
+  }, {
+    $limit: 5
+  }]);
+
+
+
+  var Top5Users = EventRegistration.aggregate(
+    [{
+      $match: {
+        "IsAttending": "1"
+      }
+    }, {
+
+      $group: {
+        _id: "$UserId",
+        totalEventsRegistered: {
+          $addToSet: "$EventId"
+        }
+      }
+    }, {
+      $project: {
+        UserName: "$UserName",
+        totalCnt: {
+          $size: "$totalEventsRegistered"
+        }
+      }
+    }, {
+      $sort: {
+        totalCnt: -1
+      }
+    }, {
+      $limit: 5
+    }])
+  var bothDone = Promise.all([TopEvents, Top5Users])
+  bothDone.then(function(a) {
+    response.send(a)
+  }).catch(function() {
+    response.send(cfg.error);
+  })
+});
+
+
 
 
 app.get("/api/v0/events", function(request, response) {
