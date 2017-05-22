@@ -1,7 +1,8 @@
 
 module.exports = {
  dbconn : 'mongodb://50.63.161.150/SpeedDating',
- port : 8081,
+ /*dbconn :'mongodb://ec2-103-4-9-102.ap-northeast-1.compute.amazonaws.com/SpeedDating',*/
+  port : 8081,
  host : "0.0.0.0",
  alreadyFriend : 0,
  existsPhone : 0,

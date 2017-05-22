@@ -104,9 +104,6 @@ app.use(methodOverride('X-HTTP-Method-Override'));
   app.use(allowCrossDomain);
   app.use(express.bodyParser());
 
-  //checks request.body for HTTP method overrides
-  //  app.use(express.methodOverride());
-
   //perform route lookup based on url and HTTP method
   app.use(app.router);
 
@@ -122,6 +119,8 @@ app.use(methodOverride('X-HTTP-Method-Override'));
 
 var opts = {
   server: {
+    user : "trystoapp",
+    pass : "##$@qwer##$@",
     socketOptions: {
       keepAlive: 1
     }
@@ -130,14 +129,34 @@ var opts = {
 
 //Connect to database
 mongoose.connect(cfg.dbconn, opts);
-//var Schema = mongoose.Schema;
-/*app.all('*', function(request, respose, next) {
-setTimeout(function() {
-console.log('timeout, slowness');
-next();
-}, 1200000); // 120 seconds
+
+var usrMap = {},
+usrMapInv = {},
+evtMap = {},
+evtMapInv = {}
+//Connect provide numeric ids to users temporarily.
+setInterval(function(){
+  User.find({}).then(function(users){
+ //users.forEach(function(usr){console.log(usr._id)})
+  var count = 211;
+   users.forEach(function(usr){
+   //console.log(usr._id)
+  count  = count + 1;
+  usrMap[""+usr._id] = count;
+  usrMapInv[""+count] = usr._id
+  })
 });
-*/
+
+Event.find({}).then(function(events){
+  var count = 421;
+   events.forEach(function(evt){
+  count  = count + 1;
+  evtMap[""+evt._id] = count;
+  evtMapInv[""+count] = evt._id
+  })
+});
+
+},5000)
 
 app.use('/', express.static(__dirname + '/docs/_build/html/'));
 
@@ -169,10 +188,6 @@ var formidable = require('formidable'),
   fs = require('fs-extra');
 
 app.post('/api/v0/upload', function(request, response) {
-
-  var form = new formidable.IncomingForm();
-
-
 
   var form = new formidable.IncomingForm()
   form.multiples = false
@@ -444,6 +459,63 @@ app.get('/api/v0/login/:phoneno', function(request, response) {
   });
 });
 
+app.get('/api/v0/alluser/:id',function(request,response){
+  if(request.params.id){
+    var matchId = usrMapInv[request.params.id]
+    console.log(matchId)
+  User.aggregate([{
+    "$match":{
+      "_id": matchId
+    }
+    }, {
+    "$project": {
+      tmp: {
+        "id": "$_id",
+        "UserName": "$UserName",
+        "Email": "$Email",
+        "PhoneNumber": "$PhoneNumber",
+        "Birthday": "$Birthday",
+        "Gender": "$Gender",
+        "City": "$City",
+        "Education": "$Education",
+        "Hobbies": "$Hobbies",
+        "Interests": "$Interests",
+        "Work": "$Work",
+        "About": "$About",
+        "ProfilePic": "$ProfilePic",
+        "DeviceIdentifier": "$DeviceIdentifier",
+        "Status": "$Status",
+        "Facebook":"$Facebook",
+        "Instagram" : "$Instagram",
+        "Twitter" : "$Twitter"
+      }
+    }
+  }, {
+    "$group": {
+      _id: null,
+      count: {
+        $sum: 1
+      },
+      rows: {
+        $addToSet: '$tmp'
+      }
+    }
+  }])
+  .then(function(data){
+  data[0].rows[0].id = usrMap[data[0].rows[0].id]
+  return response.send({data: data[0].rows[0]});
+  })
+  .catch(function(e){
+    response.send(cfg.error)
+  })
+  
+  } else {
+    response.send(cfg.error);
+  }
+})
+
+
+
 app.get('/api/v0/alluser', function(request, response) {
   console.log(request.auth)
 
@@ -469,7 +541,10 @@ app.get('/api/v0/alluser', function(request, response) {
         "About": "$About",
         "ProfilePic": "$ProfilePic",
         "DeviceIdentifier": "$DeviceIdentifier",
-        "Status": "$Status"
+        "Status": "$Status",
+        "Facebook":"$Facebook",
+        "Instagram" : "$Instagram",
+        "Twitter" : "$Twitter"
       }
     }
   }, {
@@ -484,7 +559,7 @@ app.get('/api/v0/alluser', function(request, response) {
     }
   }], function(err, users) {
     if (!err) {
-      console.log(users.length)
+      //console.log(users.length)
       response.header('Content-Range', 'users 0-' + users.length + '/' + users.length);
       var data = users[0].rows;
       if (request.param('sort')) {
@@ -496,8 +571,7 @@ app.get('/api/v0/alluser', function(request, response) {
 
         var count = 0;
         data.forEach(function(row) {
-          count = count + 1
-          row.id = count
+          row.id = usrMap[row.id]
         })
         data = data.sort(sorters.usrPropComparator(sortField, sortBy));
       }
@@ -756,7 +830,7 @@ app.post('/api/v0/addfriend', function(request, response) {
 
 
 
-    console.log('=======================================================');
+    //console.log('=======================================================');
     console.log('C .. ' + cfg.existsPhone + ' .. ' + cfg.alreadyFriend + ' :: ' + cfg.userId._id);
     if (cfg.alreadyFriend !== -1 && cfg.alreadyFriend !== undefined && cfg.userId._id !== undefined && cfg.alreadyFriend == 0) {
 
@@ -769,10 +843,7 @@ app.post('/api/v0/addfriend', function(request, response) {
         BlockedOn: request.body.BlockedOn,
         Comments: request.body.Comments
       });
-      //console.log('=====\n');
-      //console.log(friend);
-      //console.log( 'D  ' + cfg.existsPhone + ' .. ' + cfg.alreadyFriend);
-
+  
       friend.save(function(err) {
         console.log('\nsave\n' + friend);
         console.log(err);
@@ -861,13 +932,65 @@ app.get('/api/v0/event/:id', function(request, response) {
 });
 
 
-app.get('/api/v0/event', function(request, response) {
+app.get('/api/v0/apievents/:id',function(request,response){
+  if(request.params.id){
+        var matchId = evtMapInv[request.params.id+'']
+    console.log(matchId)
+  Event.aggregate([{
+    "$match": {
+      "Status": "Active",
+      "_id" : matchId
+    }
+  }, {
+    "$project": {
+      tmp: {
+        "id": "$_id",
+        "EventId": "$EventId",
+        "Name": "$Name",
+        "Display": "$Display",
+        "MaleCount": "$MaleCount",
+        "FemaleCount": "$FemaleCount",
+        "OtherCount": "$OtherCount",
+        "EventDate": "$EventDate",
+        "EventTime": "$EventTime",
+        "Duration": "$Duration",
+        "Image": "$Image",
+        "Status": "$Status"
+      }
+    }
+  }, {
+    "$group": {
+      _id: null,
+      count: {
+        $sum: 1
+      },
+      rows: {
+        $addToSet: '$tmp'
+      }
+    }
+  }])
+  .then(function(data){
+    data.forEach(function(row) {
+          row.id = evtMap[row.id]
+        })
+  return response.send({data: data[0].rows[0]});
+  })
+  .catch(function(e){
+    console.log(e)
+    response.send(cfg.error)
+  })
+  
+  } else {
+    response.send(cfg.error);
+  }
+})
+
+
+
+app.get('/api/v0/apievents', function(request, response) {
   console.log("Order : " + request.param('order'));
   console.log("Range : " + request.param('range'));
-  //console.log("Sort By : "+request.param('sort').substr(1,request.param('sort').length-2));
-  //console.log(response);
-
-
+  
   var AllEvents = Event.aggregate([{
     "$match": {
       "Status": "Active"
@@ -905,9 +1028,8 @@ app.get('/api/v0/event', function(request, response) {
     }
   }]);
 
-  AllEvents.then(function(err, events) {
-    if (!err) {
-      if (events == null) return response.send(cfg.error);
+  AllEvents.then(function(events) {
+   // if (!err) {
       response.header('Content-Range', 'events 0-' + events[0].count + '/' + events[0].count);
       var data;
       data = events[0].rows;
@@ -920,30 +1042,16 @@ app.get('/api/v0/event', function(request, response) {
 
         var sortField = sorts[0]
         var sortBy = sorts[1]
-        var count = 0;
-        data.forEach(function(row) {
-          count = count + 1
-          row.id = count
-        })
         data = data.sort(sorters.eventPropComparator(sortField, sortBy));
       }
+      data.forEach(function(row) {
+          row.id = evtMap[row.id]
+        })
+       response.send({data : data});
 
-      //   return response.send({
-      //      "data": data || []
-      //    });
-    }
-    else {
-      console.log(err);
-      return response.send(cfg.error);
-    }
-  });
-
-  /*
-
-    */
-
-
+  }).catch(function(err){  response.send(cfg.error);});
 });
+
 
 
 app.get('/api/v0/landing', function(request, response) {
@@ -984,7 +1092,6 @@ app.get('/api/v0/landing', function(request, response) {
       }
     }, {
       $project: {
-        UserName: "$UserName",
         totalCnt: {
           $size: "$totalEventsRegistered"
         }
@@ -995,10 +1102,21 @@ app.get('/api/v0/landing', function(request, response) {
       }
     }, {
       $limit: 5
-    }])
-  var bothDone = Promise.all([TopEvents, Top5Users])
-  bothDone.then(function(a) {
-    response.send(a)
+    },
+    {$lookup:
+     {
+       from: "users",
+       localField: "_id",
+       foreignField: "_id",
+       as: "UserName"
+     }
+    }
+])
+
+
+  var allDone = Promise.all([TopEvents, Top5Users])
+  allDone.then(function(a) {
+    response.send({data: a})
   }).catch(function() {
     response.send(cfg.error);
   })
