@@ -10,7 +10,6 @@ var application_root = __dirname,
   methodOverride = require("method-override"); 
 
 //Setup mongoose to use nodejs built-in  promise library instead of its mpromise
-
 mongoose.Promise = global.Promise;
 
 // config file
@@ -119,8 +118,8 @@ app.use(methodOverride('X-HTTP-Method-Override'));
 
 var opts = {
   server: {
-    user : "trystoapp",
-    pass : "##$@qwer##$@",
+    //user : "trystoapp",
+  //  pass : "JjYpEsNp!",
     socketOptions: {
       keepAlive: 1
     }
@@ -1049,7 +1048,7 @@ app.get('/api/v0/apievents', function(request, response) {
         })
        response.send({data : data});
 
-  }).catch(function(err){  response.send(cfg.error);});
+  }).catch(function(err){ console.log(err); response.send(cfg.error);});
 });
 
 

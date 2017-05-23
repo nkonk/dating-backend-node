@@ -1,5 +1,5 @@
  var mongoose = require("mongoose");
- mongoose.connect("mongodb://50.63.161.150/SpeedDating");
+ mongoose.connect("mongodb://ec2-103-4-9-102.ap-northeast-1.compute.amazonaws.com/SpeedDating");
 
  var db = mongoose.connection;
 
@@ -8,7 +8,9 @@
      console.log("Connection succeeded.");
  });
 
- var UserSchema = new mongoose.Schema({
+var User = require('./user');
+User.findOne(function(err,i){console.log(err +  i)})
+/* var UserSchema = new mongoose.Schema({
      name: String
  });
 
@@ -40,9 +42,9 @@
     title: "Hello World",
     postedBy: alex._id
 })
+*/
 
-
-post.save(function(error) {
+/*post.save(function(error) {
     if (!error) {
         Post.find({})
             .populate('postedBy')
@@ -51,7 +53,7 @@ post.save(function(error) {
                 console.log(JSON.stringify(posts, null, "\t"))
             })
     }
-});
+});*/
  /*var Schema = mongoose.Schema;
 
  var bugSchema = new Schema({
